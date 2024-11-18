@@ -1,5 +1,4 @@
-const { findBy } = "../users/users-model.js";
-
+const { findBy } = require("../users/users-model");
 /*
   If the user does not have a session saved in the server
 
@@ -25,8 +24,9 @@ function restricted(req, res, next) {
   }
 */
 async function checkUsernameFree(req, res, next) {
-  const foundUser = await findBy(req.body.username);
-  if (!foundUser) {
+  const { username } = req.body;
+  const foundUser = await findBy({ username });
+  if (foundUser.length === 0) {
     next();
   } else {
     next({ status: 422, message: "Username taken" });
@@ -58,12 +58,13 @@ async function checkUsernameExists(req, res, next) {
     "message": "Password must be longer than 3 chars"
   }
 */
-async function checkPasswordLength(req, res, next) {
-  const foundPassword = await findBy(req.body.password);
-  if (foundPassword || foundPassword.length > 3) {
-    next();
-  } else {
+function checkPasswordLength(req, res, next) {
+  console.log(req.body.password);
+  const { password } = req.body;
+  if (!password || password.length < 4) {
     next({ status: 422, message: "Password must be longer than 3 chars" });
+  } else {
+    next();
   }
 }
 

@@ -1,8 +1,12 @@
+require("dotenv").config();
+
 const express = require("express");
 const session = require("express-session");
-const KnexSessionStore = require("connect-session-knex")(session);
+const Store = require("connect-session-knex")(session);
 const helmet = require("helmet");
 const cors = require("cors");
+const authRouter = require("./auth/auth-router");
+const usersRouter = require("./users/users-router.js");
 
 /**
   Do what needs to be done to support sessions with the `express-session` package!
@@ -23,9 +27,29 @@ server.use(helmet());
 server.use(express.json());
 server.use(cors());
 
-server.get("/", (req, res) => {
-  res.json({ api: "up" });
-});
+server.use(
+  session({
+    name: "chocolatechip",
+    secret: process.env.SESSION_SECRET || "fallback_secret",
+    cookie: {
+      maxAge: 1000 * 60 * 60,
+      secure: false,
+      httpOnly: false,
+    },
+    rolling: true,
+    resave: false,
+    saveUninitialized: false,
+    store: new Store({
+      knex: require("../data/db-config"),
+      tablename: "sessions",
+      sidfieldname: "sid",
+      createtable: true,
+      clearInterval: 1000 * 60 * 60,
+    }),
+  })
+);
+server.use("/api/auth", authRouter);
+server.use("/api/users", usersRouter);
 
 server.use((err, req, res, next) => {
   // eslint-disable-line
